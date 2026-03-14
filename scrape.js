@@ -19,7 +19,8 @@ function resolveURL() {
   return DEFAULT_URL;
 }
 
-(async () => {
+async function scrapeAndSave()
+{
 
   console.log("[INFO] Starting scraper...");
 
@@ -90,7 +91,7 @@ function resolveURL() {
 
     console.log("[INFO] Writing output file...");
 
-    fs.writeFileSync("scraped_data.json", JSON.stringify(data, null, 2));
+    fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
 
     console.log("[INFO] Scraping completed successfully");
 
@@ -105,7 +106,7 @@ function resolveURL() {
       scraped_at: new Date().toISOString()
     };
 
-    fs.writeFileSync("scraped_data.json", JSON.stringify(errorOutput, null, 2));
+    fs.writeFileSync("data.json", JSON.stringify(errorOutput, null, 2));
 
   } finally {
 
@@ -116,4 +117,6 @@ function resolveURL() {
 
   }
 
-})();
+}
+
+scrapeAndSave();

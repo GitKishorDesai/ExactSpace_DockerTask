@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-DATA_FILE = "scraped_data.json"
+DATA_FILE = "data.json"
 
 
 @app.route("/")
@@ -16,6 +16,10 @@ def get_scraped_data():
         return jsonify({"error": "Scraped data file not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/health")
+def health_check():
+    return jsonify({"status": "OK"})
 
 
 if __name__ == "__main__":
