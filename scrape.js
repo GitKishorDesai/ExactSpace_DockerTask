@@ -1,9 +1,27 @@
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 
+const DEFAULT_URL = "https://exactspace.co/";
+
+function resolveURL() {
+  const envURL = process.env.SCRAPE_URL;
+
+  if (envURL) {
+    console.log("[INFO] SCRAPE_URL detected.");
+    console.log("[INFO] Overriding default URL.");
+    console.log("[INFO] Target URL:", envURL);
+    return envURL;
+  }
+
+  console.log("[INFO] No SCRAPE_URL provided.");
+  console.log("[INFO] Using default URL:", DEFAULT_URL);
+
+  return DEFAULT_URL;
+}
+
 (async () => {
   try {
-    const url = process.env.SCRAPE_URL || "https://exactspace.co/";
+    const url = resolveURL();
 
     console.log("Scraping URL:", url);
 
