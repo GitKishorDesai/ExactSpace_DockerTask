@@ -20,12 +20,19 @@ function resolveURL() {
 }
 
 (async () => {
+
+  console.log("[INFO] Starting scraper...");
+
+  const url = resolveURL();
+  console.log("[INFO] Target URL:", url);
+
+  let browser;
+
   try {
-    const url = resolveURL();
 
-    console.log("Scraping URL:", url);
+    console.log("[INFO] Launching headless browser...");
 
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       executablePath: "/usr/bin/chromium",
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"]
@@ -33,29 +40,80 @@ function resolveURL() {
 
     const page = await browser.newPage();
 
-    await page.goto(url, { waitUntil: "networkidle2" });
+    console.log("[INFO] Navigating to page...");
 
-    const title = await page.title();
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: 30000
+    });
 
-    const heading = await page.evaluate(() => {
-      const h1 = document.querySelector("h1");
-      return h1 ? h1.innerText : null;
+    console.log("[INFO] Page loaded successfully");
+
+    console.log("[INFO] Extracting page data...");
+
+    const pageData = await page.evaluate(() => {
+
+      const getTextArray = (selector) => {
+        return Array.from(document.querySelectorAll(selector))
+          .map(el => el.innerText.trim())
+          .filter(text => text.length > 0);
+      };
+
+      const metaDescriptionTag = document.querySelector('meta[name="description"]');
+
+      return {
+        title: document.title,
+
+        meta_description: metaDescriptionTag
+          ? metaDescriptionTag.getAttribute("content")
+          : null,
+
+        headings: {
+          h1: getTextArray("h1"),
+          h2: getTextArray("h2"),
+          h3: getTextArray("h3")
+        },
+
+        statistics: {
+          total_links: document.querySelectorAll("a").length,
+          total_images: document.querySelectorAll("img").length
+        }
+      };
+
     });
 
     const data = {
       url,
-      title,
-      heading,
+      ...pageData,
       scraped_at: new Date().toISOString()
     };
 
+    console.log("[INFO] Writing output file...");
+
     fs.writeFileSync("scraped_data.json", JSON.stringify(data, null, 2));
 
-    console.log("Scraped data saved to scraped_data.json");
+    console.log("[INFO] Scraping completed successfully");
 
-    await browser.close();
   } catch (error) {
-    console.error("Scraping failed:", error);
-    process.exit(1);
+
+    console.error("[ERROR] Failed to scrape page");
+
+    const errorOutput = {
+      url,
+      status: "failed",
+      error: error.message,
+      scraped_at: new Date().toISOString()
+    };
+
+    fs.writeFileSync("scraped_data.json", JSON.stringify(errorOutput, null, 2));
+
+  } finally {
+
+    if (browser) {
+      await browser.close();
+      console.log("[INFO] Browser closed");
+    }
+
   }
+
 })();
